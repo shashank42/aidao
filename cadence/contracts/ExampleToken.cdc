@@ -1,6 +1,6 @@
-import FungibleToken from "./standard/FungibleToken.cdc"
-import MetadataViews from "./standard/MetadataViews.cdc"
-import FungibleTokenMetadataViews from "./standard/FungibleTokenMetadataViews.cdc"
+import FungibleToken from "FungibleToken"
+import MetadataViews from "MetadataViews"
+import FungibleTokenMetadataViews from "FungibleTokenMetadataViews"
 
 pub contract ExampleToken: FungibleToken {
 
@@ -13,6 +13,7 @@ pub contract ExampleToken: FungibleToken {
     pub let ReceiverPublicPath: PublicPath
     pub let AdminStoragePath: StoragePath
     pub let VaultStoragePathCapability: PublicPath
+    pub let MinterStoragePath: StoragePath
 
     /// The event that is emitted when the contract is created
     pub event TokensInitialized(initialSupply: UFix64)
@@ -242,6 +243,7 @@ pub contract ExampleToken: FungibleToken {
         self.ReceiverPublicPath = /public/exampleTokenReceiver
         self.AdminStoragePath = /storage/exampleTokenAdmin
         self.VaultStoragePathCapability = /public/exampleTokenVault
+        self.MinterStoragePath = /storage/exampleTokenMinter
 
         // Create the Vault with the total supply of tokens and save it in storage.
         let vault <- create Vault(balance: self.totalSupply)
@@ -269,6 +271,11 @@ pub contract ExampleToken: FungibleToken {
         self.account.link<&ExampleToken.Vault>(/private/exampleTokenVault, target: self.VaultStoragePath)
 
         let admin <- create Administrator()
+        
+         // Create a minter and save it
+        let minter <- admin.createNewMinter(allowedAmount: 10000000.0)
+        self.account.save(<-minter, to: self.MinterStoragePath)
+
         self.account.save(<-admin, to: self.AdminStoragePath)
 
         // Emit an event that shows that the contract was initialized
